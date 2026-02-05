@@ -12,11 +12,11 @@ This project ties together different tech-sulitions with a congruent business ca
 
 The project consists of three connected stages, each with it's own repository and README. If you are interested in one or more of the three stages, feel free to visit the corresponding repo to see the full code as well as a comprehensive readme.
 
-> Stage 1: Foundation. Data Preparation & Streaming Infrastructure
+> Stage 1: Foundation: Data Preparation, Statistical Analysis & Root Cause Identification
 > 
-> Stage 2: Discovery. Statistical Analysis & Root Cause Identification
+> Stage 2: Streaming Infrastructure: Event Streaming Producer and Comsumer
 > 
-> Stage 3: Production. Modular Detection System & Comprehensive Testing
+> Stage 3: Production: Modular Detection System & Comprehensive Testing
 
 
 ## Business Scenario
@@ -27,15 +27,14 @@ The client reaches out to me for (initially!) two different tasks:
 1. Highest prio: Find the reason why the conversion drops latel
 2. Install a solution to read clickstreams and convert them into an analyzable format, as right now this is done only with samples in excel
 
-## **Stage 1: Foundation - Data Preparation & Streaming Infrastructure**
+## **Stage 1: Foundation. Data Preparation, Streaming Infrastructure, Statistical Analysis**
+**Repository:** [`Clickstream_project_part_1_exploration_and_data_preperation`](https://github.com/ksokoll/Clickstream_project_part_1_exploration_and_data_preperation)  
 
 Before we can start with the actual use-case, we need to prepare some groundwork. I used the Retail Rocket dataset (2,7M e-commerce events collected over 4,5 months), but added a bit of secred sauce: I contaminated the dataset with a realistic bug: Users with a specific combination of OS, device and browser could not proceed to checkout, resulting in slightly, but measurebly rising number of abadoned carts.
 
 The contamination was more difficult then I expected, but eventually ended up with a good result.
 
-In the course of the process I pivoted back from using MS Fabric event streams, as planned originally, to a local Kafka stack after locking myself out of Azure with a MFA lock. Thats something that can happen when you try to use enterprise software as a single private developer, but Kafka was doing the job also quite well. In the end switching to Kafka resulted in cool lessons about producer/consumer patterns, batching, offset management, containerization, etc.
-
-## **Stage 2: Discovery - Statistical Analysis & Root Cause Identification**
+Not it's time to tacke the first of the two tasks given by my client: Finding the root cause for the Conversion drop.
 
 After getting data into Parquet files (pivoting from TimescaleDB after ODBC encoding hell), I created a Power BI dashboard and conducted systematic root cause analysis. This wasn't just "make some charts and see what looks weird", but more hypothesis-driven investigation using statistical rigor. Starting broad, total traffic dropped from 14,390 events/day to 12,450 in the anomaly period. Sounds significant until you calculate standard deviation (4,440 events) - the drop is well within ±1σ, meaning normal variance. Traffic wasn't the problem.
 
@@ -47,7 +46,19 @@ Conversion rate quantified the damage: 0.74% normal → 0.42% during bug = 43 pe
 
 I then built an automated anomaly detection script using same-weekday baselines (compare each Saturday to the last 4 Saturdays, accounting for day-of-week patterns) and robust statistics. Initial implementation with mean/standard deviation failed because the lookback window was contaminated with bug days. Switching to median + MAD (Median Absolute Deviation) solved it - these metrics ignore outliers and gave reliable baselines even when recent data was corrupted.
 
+## **Stage 2: Kafka Clickstream Producer & Consumer**
+**Repository:** [`Clickstream_project_part_2_kafka_stream`](https://github.com/ksokoll/Clickstream_project_part_2_kafka_stream)
+
+Next, we tackle step two of the project, which is the second task given by my client: Implementing a tool that is able to convert the streaming data of their provider into analyzable batched files.
+
+Since this is a fictional client, there is no real event stream I could connect to. Therefore I built a event stream producer myself based on the above Retail Rocket dataset. Setting it up was quite easy, the more difficult part was the following:
+
+For the consumer, over the course of the process I pivoted back from using MS Fabric event streams, as planned originally, to a local Kafka stack after locking myself out of Azure with a MFA lock. Thats something that can happen when you try to use enterprise software as a single private developer, but Kafka was doing the job also quite well. In the end switching to Kafka resulted in cool lessons about producer/consumer patterns, batching, offset management, containerization, etc.
+
+It took some serious time to handle all the errors, but in the end it worked out and it was nice to see both producer and cosumer in action!
+
 ## **Stage 3: Production - Modular Detection System & Comprehensive Testing**
+**Repository:** [`Clickstream_project_part_3_anomaly_detection`](https://github.com/ksokoll/Clickstream_project_part_3_anomaly_detection)
 
 In this stage I assumed a change of the clients planned tasks for me. Instead of just uncovering the anomaly and setting up a clickstream-converter, I got the task to build a tool that helps them identify such anomanlies in the future in a faster fashion, and for every OS/Browser/Device combination that they wished. This imitates typical client behavior with changing requirements as new results come to the surface during the project.
 
