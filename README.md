@@ -1,5 +1,5 @@
 # Clickstream_Project Readme and Project overview
-> **A project based on the business need of a fictional electronic-seller**
+> **An end-to-end data engineering project tackling a real business problem: identifying the root cause of a 35% conversion rate drop for a fictional electronics retailer**
 
 ---
 ## Purpose & Context
